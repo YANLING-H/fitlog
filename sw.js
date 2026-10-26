@@ -1,8 +1,8 @@
 // Offline shell: serve the app's own files from cache, refresh them in the background.
-const CACHE = "fitlog-v1";
+const CACHE = "fitlog-v2";
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "db.js", "ai.js",
-  "vendor/anthropic-sdk.mjs", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "examples/nov-2026-block.json",
+  "foods.js", "vendor/anthropic-sdk.mjs", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "examples/nov-2026-block.json",
 ];
 
 self.addEventListener("install", (e) => {

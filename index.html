@@ -64,14 +64,18 @@
       <h2>记一餐</h2>
       <label class="upload" id="uploadLabel">
         <b>拍照 / 选照片</b>
-        <span class="small">上传食物照片，自动估算热量和三大营养素</span>
-        <input type="file" id="photoInput" accept="image/*">
+        <span class="small">可以一次选几张（整体 + 特写），自动估算热量和三大营养素</span>
+        <input type="file" id="photoInput" accept="image/*" multiple>
       </label>
       <div class="row small muted" id="aiState"></div>
       <div class="row">
         <button class="btn" id="textMealBtn">用文字描述</button>
         <button class="btn ghost" id="manualMealBtn">手动填写</button>
       </div>
+    </div>
+    <div class="card">
+      <div class="row between"><h3>快速再记</h3><div class="chips" id="quickTabs"></div></div>
+      <div id="quickList"></div>
     </div>
     <div class="card">
       <div class="row between"><h3 id="foodDayTitle">今天的饮食</h3><span class="small mono muted" id="foodDayTotal"></span></div>
@@ -96,6 +100,8 @@
       <div class="row between small"><span>疲劳（1 很轻松 – 5 很累）</span><div class="scale" id="fatigueScale"></div></div>
       <textarea id="wNote" rows="2" placeholder="备注：哪里不舒服、器械设置、动作要点…"></textarea>
       <div class="row"><button class="btn primary" id="saveWorkout">保存训练</button><button class="btn ghost danger" id="clearWorkout">删除这天的训练</button></div>
+      <div class="row small"><span class="muted">日期记错了？移到</span><input type="date" id="moveDate" aria-label="移到哪一天"><button class="btn ghost small" id="moveWorkout">移过去</button></div>
+      <div class="small muted">要补记以前的训练，先在顶部选那一天，再按平常一样记录。</div>
     </div>
     <div class="card">
       <h3>最近训练</h3>
@@ -112,6 +118,41 @@
     </div>
     <div id="planDays" class="view" style="padding-top:0"></div>
     <div class="row"><button class="btn" id="addPlanDay">＋ 加一个训练日</button><button class="btn ghost" id="loadExample">载入示例：11 月 block</button></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="view" id="v-prog" hidden>
+    <div class="card">
+      <div class="row between"><h2>体重</h2><span class="small muted" id="wtDateLbl"></span></div>
+      <div class="row"><label class="f" style="flex:1">这天的体重 (kg)<input id="wtInput" type="number" inputmode="decimal" step="0.1"></label>
+        <label class="f" style="flex:1">目标体重 (kg)<input id="goalWtInput" type="number" inputmode="decimal" step="0.1"></label></div>
+      <div class="row"><button class="btn primary" id="saveWt">保存</button><span class="small muted">每天早上空腹称一次最准。</span></div>
+      <div class="legend"><span style="--c:var(--muted)">每天</span><span style="--c:var(--kcal)">7 天平均</span><span>虚线 = 目标体重</span></div>
+      <div id="wtChart"></div>
+      <div class="small muted" id="wtSummary"></div>
+    </div>
+    <div class="card">
+      <h3>按体重趋势调热量目标</h3>
+      <div id="adaptBox" class="small"></div>
+    </div>
+    <div class="card">
+      <div class="row between"><h3>进度照片</h3><label class="btn small" for="photoProg" style="cursor:pointer">＋ 加照片</label><input type="file" id="photoProg" accept="image/*" multiple hidden></div>
+      <div id="progPhotos"></div>
+      <div id="compareBox"></div>
+    </div>
+    <div class="card">
+      <div class="row between"><h3>力量进步（估算 1RM）</h3><select id="e1rmEx" aria-label="选动作"></select></div>
+      <div id="e1rmChart"></div>
+      <div class="small muted" id="e1rmSummary"></div>
+    </div>
+    <div class="card">
+      <h3>AI 教练</h3>
+      <div class="small muted">把最近几周的饮食、体重和训练记录发给 Claude（用你在「设置」填的 key），它会给出具体建议。每条建议都要你点「采纳」才会改目标或计划。</div>
+      <div class="row small"><span class="muted">看最近</span><div class="chips" id="coachRange"></div></div>
+      <textarea id="coachQ" rows="2" placeholder="这周哪里该调整？"></textarea>
+      <div class="row"><button class="btn primary" id="coachAsk">让 Claude 看看</button><span class="small muted" id="coachState"></span></div>
+      <div id="coachOut"></div>
+    </div>
   </section>
 
   <!-- SETTINGS -->
@@ -161,10 +202,31 @@
       <div class="small muted" id="keyState"></div>
     </div>
     <div class="card">
+      <h3>杠铃和配片</h3>
+      <div class="grid2">
+        <label class="f">杠铃杆重量 (lb)<input id="sBar" type="number" inputmode="decimal"></label>
+        <label class="f">每次加重 (lb)<input id="sIncr" type="number" inputmode="decimal"></label>
+      </div>
+      <label class="f">你有的杠铃片 (lb，用逗号分开)<input id="sPlates" placeholder="45,35,25,10,5,2.5"></label>
+      <label class="f">默认组间休息 (秒)<input id="sRest" type="number" inputmode="numeric"></label>
+      <div class="row"><button class="btn primary" id="saveGym">保存</button><span class="small muted">建议重量和配片会按这里的设置取整。</span></div>
+    </div>
+    <div class="card">
       <h3>备份</h3>
       <div class="small muted">所有记录只存在这台设备的浏览器里。清除浏览器数据或换手机前，先导出备份；在新设备上导入即可恢复。API key 不会写进备份。</div>
       <div class="row"><button class="btn" id="exportBtn">导出备份</button><label class="btn" for="importInput" style="cursor:pointer">导入备份</label><input type="file" id="importInput" accept="application/json,.json" hidden></div>
       <div class="small muted" id="backupState"></div>
+      <div class="small muted">导出成表格（CSV，可以直接用 Excel 或 Numbers 打开）：</div>
+      <div class="row"><button class="btn" data-csv="meals">饮食 CSV</button><button class="btn" data-csv="workouts">训练 CSV</button><button class="btn" data-csv="weights">体重 CSV</button></div>
+    </div>
+    <div class="card">
+      <h3>数据会发到哪里</h3>
+      <div class="small muted">这个应用没有服务器，也不收集任何统计数据。所有记录（饮食、训练、体重、进度照片）只存在这台设备的浏览器里。只有两种情况会把数据发出去，而且都只发给 <span class="mono">api.anthropic.com</span>：</div>
+      <ul class="small muted" style="margin:0;padding-left:20px">
+        <li>你点「估算」或「修正」时，发送这一餐的照片（缩小后的）和你写的说明。</li>
+        <li>你点「让 Claude 看看」时，发送所选时间段的饮食、体重和训练记录（文字，不含照片）。</li>
+      </ul>
+      <div class="small muted">进度照片永远不会发出去。导出的备份和 CSV 只保存在你自己选的位置。</div>
     </div>
     <div class="card small muted">
       <div>照片估算一般有 ±20% 误差，份量不确定时可以在补充说明里写克数。只保存缩略图，原图不保存。</div>
@@ -177,9 +239,14 @@
   <button role="tab" data-tab="food" aria-selected="false"><b>饮食</b>拍照记录</button>
   <button role="tab" data-tab="train" aria-selected="false"><b>训练</b>组次重量</button>
   <button role="tab" data-tab="plan" aria-selected="false"><b>计划</b>当前 block</button>
+  <button role="tab" data-tab="prog" aria-selected="false"><b>进度</b>体重教练</button>
   <button role="tab" data-tab="me" aria-selected="false"><b>设置</b>目标</button>
 </nav>
 <div class="toast" id="toast" role="status"></div>
+<div class="timer" id="restBar" hidden role="timer" aria-live="off">
+  <span class="small" id="restName"></span><b class="num" id="restLeft">0:00</b>
+  <button class="btn small" id="restMinus">−15s</button><button class="btn small" id="restPlus">+15s</button><button class="btn small" id="restSkip">跳过</button>
+</div>
 <div id="sheetRoot"></div>
 
 <script type="module" src="app.js"></script>

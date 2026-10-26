@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>训练饮食本</title>
+<meta name="description" content="拍照记饮食、对照每日目标，按计划记录训练。">
+<meta name="theme-color" content="#F3F5F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F161B" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="训练饮食本">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">训练饮食本<small>LOG</small></div>
+    <div class="datenav">
+      <button class="icon-btn" id="prevDay" aria-label="前一天">‹</button>
+      <input type="date" id="dateInput" aria-label="日期">
+      <button class="icon-btn" id="nextDay" aria-label="后一天">›</button>
+    </div>
+  </header>
+  <div class="sync" id="syncLine"><span class="dot" id="syncDot"></span><span id="syncText">正在读取本机记录…</span></div>
+
+  <!-- TODAY -->
+  <section class="view" id="v-today">
+    <div class="card" id="boardCard">
+      <div class="row between"><h2 id="todayTitle">今天吃够了吗</h2><span id="todayPill"></span></div>
+      <div class="board">
+        <div class="ring-wrap"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--sunk)" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="52" fill="none" stroke="var(--kcal)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 400"/></svg>
+          <div class="ring-center"><div class="big" id="kcalBig">0</div><div class="sub" id="kcalSub">千卡</div></div>
+        </div>
+        <div class="bars" id="macroBars"></div>
+      </div>
+      <div class="verdict none" id="verdict">先到「设置」填身高、体重和目标，我会算出每天该吃多少。</div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>今天的训练</h3><button class="btn ghost small" data-go="train">去记录</button></div>
+      <div id="todayWorkout"></div>
+    </div>
+
+    <div class="card">
+      <div class="row between"><h3>最近 7 天</h3>
+        <div class="legend"><span style="--c:var(--kcal)">热量</span><span style="--c:var(--pro)">蛋白质</span><span>虚线 = 目标</span></div>
+      </div>
+      <div class="wk" id="weekChart"></div>
+      <div class="small muted" id="weekSummary"></div>
+    </div>
+  </section>
+
+  <!-- FOOD -->
+  <section class="view" id="v-food" hidden>
+    <div class="card">
+      <h2>记一餐</h2>
+      <label class="upload" id="uploadLabel">
+        <b>拍照 / 选照片</b>
+        <span class="small">上传食物照片，自动估算热量和三大营养素</span>
+        <input type="file" id="photoInput" accept="image/*">
+      </label>
+      <div class="row small muted" id="aiState"></div>
+      <div class="row">
+        <button class="btn" id="textMealBtn">用文字描述</button>
+        <button class="btn ghost" id="manualMealBtn">手动填写</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row between"><h3 id="foodDayTitle">今天的饮食</h3><span class="small mono muted" id="foodDayTotal"></span></div>
+      <div id="mealList"></div>
+    </div>
+  </section>
+
+  <!-- TRAIN -->
+  <section class="view" id="v-train" hidden>
+    <div class="card">
+      <div class="row between"><h2 id="trainTitle">记录训练</h2><span class="small muted" id="trainSaved"></span></div>
+      <div class="small muted" id="planName"></div>
+      <div class="chips" id="dayChips"></div>
+      <div class="row small"><span class="muted">第几周</span><div class="chips" id="weekChips"></div></div>
+    </div>
+    <div class="card" id="exCard"><div id="exList"></div>
+      <div class="row"><button class="btn ghost" id="addEx">＋ 加一个动作</button></div>
+    </div>
+    <div class="card">
+      <h3>当天状态</h3>
+      <div class="row between small"><span>睡眠（1 很差 – 5 很好）</span><div class="scale" id="sleepScale"></div></div>
+      <div class="row between small"><span>疲劳（1 很轻松 – 5 很累）</span><div class="scale" id="fatigueScale"></div></div>
+      <textarea id="wNote" rows="2" placeholder="备注：哪里不舒服、器械设置、动作要点…"></textarea>
+      <div class="row"><button class="btn primary" id="saveWorkout">保存训练</button><button class="btn ghost danger" id="clearWorkout">删除这天的训练</button></div>
+    </div>
+    <div class="card">
+      <h3>最近训练</h3>
+      <div id="trainHistory"></div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="view" id="v-plan" hidden>
+    <div class="card">
+      <div class="row between"><h2>训练计划</h2><button class="btn primary" id="savePlan">保存计划</button></div>
+      <label class="f">计划名称<input id="planTitle" placeholder="例如 2026 年 11 月 block"></label>
+      <div class="small muted">每个格子写该周的组×次 @重量，例如 <span class="mono">4×6 @80</span>。记录训练时会按这里预填组数、次数和重量。</div>
+    </div>
+    <div id="planDays" class="view" style="padding-top:0"></div>
+    <div class="row"><button class="btn" id="addPlanDay">＋ 加一个训练日</button><button class="btn ghost" id="loadExample">载入示例：11 月 block</button></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="v-me" hidden>
+    <div class="card">
+      <h2>身体数据与目标</h2>
+      <div class="grid2">
+        <label class="f">性别<select id="sSex"><option value="f">女</option><option value="m">男</option></select></label>
+        <label class="f">年龄<input id="sAge" type="number" inputmode="numeric" min="12" max="90"></label>
+        <label class="f">身高 (cm)<input id="sHeight" type="number" inputmode="decimal"></label>
+        <label class="f">体重 (kg)<input id="sWeight" type="number" inputmode="decimal" step="0.1"></label>
+        <label class="f">日常活动<select id="sAct">
+          <option value="1.375">久坐 + 每周练 3 次</option>
+          <option value="1.45">走动较多 + 每周练 3 次</option>
+          <option value="1.55">站立工作 + 每周练 3–4 次</option>
+          <option value="1.7">体力工作或每周练 5 次以上</option>
+        </select></label>
+        <label class="f">目标<select id="sGoal">
+          <option value="cut">减脂</option>
+          <option value="recomp">维持体重、增力量</option>
+          <option value="gain">增肌</option>
+        </select></label>
+      </div>
+      <div class="row"><button class="btn" id="calcBtn">按数据计算目标</button></div>
+      <div class="small muted" id="calcExplain"></div>
+    </div>
+    <div class="card">
+      <h3>每日目标（可手动改）</h3>
+      <div class="grid2">
+        <label class="f">热量 (千卡)<input id="tK" type="number" inputmode="numeric"></label>
+        <label class="f">蛋白质 (g)<input id="tP" type="number" inputmode="numeric"></label>
+        <label class="f">碳水 (g)<input id="tC" type="number" inputmode="numeric"></label>
+        <label class="f">脂肪 (g)<input id="tF" type="number" inputmode="numeric"></label>
+      </div>
+      <div class="row"><button class="btn primary" id="saveSettings">保存</button></div>
+    </div>
+    <div class="card">
+      <h3>照片识别（Claude API）</h3>
+      <div class="small muted">照片识别要用你自己的 Anthropic API key。到 <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> 创建一个 key 并充值少量额度。key 只存在这台设备的浏览器里，只会发给 Anthropic。</div>
+      <label class="f">API key<input id="sKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-..."></label>
+      <label class="f">模型<select id="sModel">
+        <option value="claude-opus-5-5">Claude Opus 5.5（最准，每张约 2–4 美分）</option>
+        <option value="claude-sonnet-5-5">Claude Sonnet 5.5（便宜一半左右）</option>
+        <option value="claude-haiku-5-5">Claude Haiku 5.5（最便宜，较粗略）</option>
+      </select></label>
+      <div class="row"><button class="btn primary" id="saveKey">保存</button><button class="btn ghost" id="testKey">测试连接</button><button class="btn ghost danger" id="clearKey">删除 key</button></div>
+      <div class="small muted" id="keyState"></div>
+    </div>
+    <div class="card">
+      <h3>备份</h3>
+      <div class="small muted">所有记录只存在这台设备的浏览器里。清除浏览器数据或换手机前，先导出备份；在新设备上导入即可恢复。API key 不会写进备份。</div>
+      <div class="row"><button class="btn" id="exportBtn">导出备份</button><label class="btn" for="importInput" style="cursor:pointer">导入备份</label><input type="file" id="importInput" accept="application/json,.json" hidden></div>
+      <div class="small muted" id="backupState"></div>
+    </div>
+    <div class="card small muted">
+      <div>照片估算一般有 ±20% 误差，份量不确定时可以在补充说明里写克数。只保存缩略图，原图不保存。</div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="today" aria-selected="true"><b>今日</b>总览</button>
+  <button role="tab" data-tab="food" aria-selected="false"><b>饮食</b>拍照记录</button>
+  <button role="tab" data-tab="train" aria-selected="false"><b>训练</b>组次重量</button>
+  <button role="tab" data-tab="plan" aria-selected="false"><b>计划</b>当前 block</button>
+  <button role="tab" data-tab="me" aria-selected="false"><b>设置</b>目标</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+<div id="sheetRoot"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

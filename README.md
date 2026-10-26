@@ -21,17 +21,21 @@
 
 key 只保存在这台设备的浏览器里，只会发给 `api.anthropic.com`。默认模型是 Claude Opus 5.5，可以在设置里换成更便宜的 Sonnet 5.5 或 Haiku 5.5。
 
-## 部署（GitHub Pages）
+## 部署（Cloudflare Workers）
 
-在仓库的 Settings → Pages → Build and deployment 里，Source 选 **Deploy from a branch**，Branch 选 `main`，目录选 `/ (root)`，然后保存。几分钟后就能通过下面的网址打开：
+仓库里的 `wrangler.jsonc` 会把整个目录当作静态文件发布（不运行 Worker 脚本）。静态文件请求在免费版也不限次数，不计入每天 10 万次的 Worker 请求额度。`.assetsignore` 列出了不需要发布的文件。
 
-```
-https://yanling-h.github.io/fitlog/
-```
+1. 登录 [dash.cloudflare.com](https://dash.cloudflare.com)，进入 **Workers & Pages**，点 **Create**，选 **Import a repository**（连接 GitHub）。
+2. 选择 `YANLING-H/fitlog` 仓库。项目名填 `fitlog`，Build command 留空，Deploy command 保持默认的 `npx wrangler deploy`。
+3. 点 **Deploy**。完成后网址是 `https://fitlog.<你的子域>.workers.dev`，也可以在 Settings → Domains & Routes 绑定自己的域名。
+
+之后每次 `main` 有更新都会自动重新部署。
 
 在手机上打开这个网址后：
 - iPhone（Safari）：点分享按钮，选「添加到主屏幕」。
 - Android（Chrome）：打开菜单，选「添加到主屏幕」或「安装应用」。
+
+也可以用 GitHub Pages：在 Settings → Pages 里选择 `main` / `(root)`。
 
 ## 本地运行
 

@@ -1,0 +1,10 @@
+// Cloudflare Workers: serve this folder as static assets (no Worker script).
+// Requests to static assets are free and don't count against the Worker request limit.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fitlog",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./"
+  }
+}
